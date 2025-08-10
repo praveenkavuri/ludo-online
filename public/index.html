@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ludo Online</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="setup" class="panel">
+    <h1>Ludo Online</h1>
+    <label>Server URL: <input type="text" id="serverUrl" placeholder="ws://localhost:3000"></label>
+    <label>Room ID: <input type="text" id="roomId" placeholder="room1"></label>
+    <label>Name: <input type="text" id="playerName" placeholder="Your name"></label>
+    <label>Color:
+      <select id="playerColor">
+        <option value="red">Red</option>
+        <option value="green">Green</option>
+        <option value="yellow">Yellow</option>
+        <option value="blue">Blue</option>
+      </select>
+    </label>
+    <button id="joinBtn">Join Room</button>
+  </div>
+  <div id="game" class="hidden">
+    <div class="sidebar">
+      <h2>Players</h2>
+      <ul id="playersList"></ul>
+      <div id="controls">
+        <button id="readyBtn">Ready</button>
+        <button id="startBtn" class="hidden">Start Game</button>
+        <button id="rollBtn" class="hidden">Roll Dice</button>
+        <div id="diceDisplay"></div>
+      </div>
+    </div>
+    <div class="board-container">
+      <div id="board"></div>
+    </div>
+  </div>
+  <script src="game.js"></script>
+</body>
+</html>
