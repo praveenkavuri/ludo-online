@@ -10,8 +10,9 @@
 <body>
   <div id="setup" class="panel">
     <h1>Ludo Online</h1>
-    <label>Server URL: <input type="text" id="serverUrl" placeholder="ws://localhost:3000"></label>
-    <label>Room ID: <input type="text" id="roomId" placeholder="room1"></label>
+    <!-- Hide server URL input; the script will auto-fill and use production websocket URL -->
+    <label class="hidden">Server URL: <input type="text" id="serverUrl" placeholder="wss://your-server/ws"></label>
+    <label>Room ID: <input type="text" id="roomId" placeholder="(leave empty to create)"></label>
     <label>Name: <input type="text" id="playerName" placeholder="Your name"></label>
     <label>Color:
       <select id="playerColor">
@@ -21,7 +22,7 @@
         <option value="blue">Blue</option>
       </select>
     </label>
-    <button id="joinBtn">Join Room</button>
+    <button id="joinBtn">Join / Create Room</button>
   </div>
   <div id="game" class="hidden">
     <div class="sidebar">
@@ -33,6 +34,7 @@
         <button id="rollBtn" class="hidden">Roll Dice</button>
         <div id="diceDisplay"></div>
       </div>
+      <div id="inviteLink" class="invite-link hidden"></div>
     </div>
     <div class="board-container">
       <div id="board"></div>
