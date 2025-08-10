@@ -2,44 +2,611 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ludo Online</title>
-  <link rel="stylesheet" href="styles.css">
+  <style>
+    /* Base styles */
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: "Segoe UI", Roboto, Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
+      color: #333;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      min-height: 100vh;
+      box-sizing: border-box;
+    }
+    .panel {
+      background: #ffffff;
+      padding: 20px;
+      margin-top: 40px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      min-width: 300px;
+    }
+    .panel label {
+      display: flex;
+      flex-direction: column;
+      font-size: 14px;
+    }
+    .panel input {
+      padding: 6px;
+      margin-top: 4px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .panel button {
+      padding: 8px 12px;
+      border: none;
+      border-radius: 4px;
+      background: #1976d2;
+      color: #ffffff;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .panel button:hover {
+      background: #145ca6;
+    }
+    .hidden {
+      display: none;
+    }
+    #game {
+      display: flex;
+      margin-top: 20px;
+      gap: 20px;
+    }
+    .sidebar {
+      width: 220px;
+      background: #ffffff;
+      padding: 16px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      display: flex;
+      flex-direction: column;
+    }
+    #playersList {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 10px 0;
+    }
+    #playersList li {
+      padding: 4px 0;
+      font-size: 14px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    #playersList .color-indicator {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      display: inline-block;
+    }
+    .board-container {
+      position: relative;
+      width: 480px;
+      height: 480px;
+    }
+    #board {
+      display: grid;
+      grid-template-columns: repeat(15, 32px);
+      grid-template-rows: repeat(15, 32px);
+      width: 480px;
+      height: 480px;
+      border: 2px solid #444;
+      position: relative;
+    }
+    #board .cell {
+      width: 32px;
+      height: 32px;
+      box-sizing: border-box;
+      border: 1px solid #ccc;
+    }
+    #board .main-track { background: #e0e0e0; }
+    #board .safe { background: #dcedc8; }
+    #board .home-red { background: #ffcdd2; }
+    #board .home-green { background: #c8e6c9; }
+    #board .home-yellow { background: #fff9c4; }
+    #board .home-blue { background: #bbdefb; }
+    #board .final-red { background: #ef9a9a; }
+    #board .final-green { background: #a5d6a7; }
+    #board .final-yellow { background: #fff59d; }
+    #board .final-blue { background: #90caf9; }
+    .token {
+      position: absolute;
+      width: 24px;
+      height: 24px;
+      border-radius: 50%;
+      border: 2px solid #444;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 14px;
+      cursor: default;
+      transition: top 0.2s, left 0.2s;
+    }
+    .token.red { background: #e53935; }
+    .token.green { background: #43a047; }
+    .token.yellow { background: #fbc02d; color:#444; }
+    .token.blue { background: #1e88e5; }
+    .token.movable {
+      box-shadow: 0 0 0 3px #ff9800;
+      cursor: pointer;
+    }
+    #controls {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      margin-top: auto;
+    }
+    /* Dice styles */
+    #dice {
+      width: 60px;
+      height: 60px;
+      border-radius: 8px;
+      background: #ffffff;
+      border: 2px solid #444;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      font-weight: bold;
+      color: #333;
+      cursor: pointer;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+      user-select: none;
+    }
+    #dice.roll {
+      animation: spin 0.8s linear;
+    }
+    @keyframes spin {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+    /* Invite link styling */
+    .invite-link {
+      margin-top: 12px;
+      font-size: 12px;
+      color: #1976d2;
+      cursor: pointer;
+      word-break: break-all;
+    }
+    .invite-link:hover {
+      text-decoration: underline;
+    }
+  </style>
 </head>
 <body>
   <div id="setup" class="panel">
     <h1>Ludo Online</h1>
-    <!-- Hide server URL input; the script will auto-fill and use production websocket URL -->
-    <label class="hidden">Server URL: <input type="text" id="serverUrl" placeholder="wss://your-server/ws"></label>
-    <label>Room ID: <input type="text" id="roomId" placeholder="(leave empty to create)"></label>
     <label>Name: <input type="text" id="playerName" placeholder="Your name"></label>
-    <label>Color:
-      <select id="playerColor">
-        <option value="red">Red</option>
-        <option value="green">Green</option>
-        <option value="yellow">Yellow</option>
-        <option value="blue">Blue</option>
-      </select>
-    </label>
-    <button id="joinBtn">Join / Create Room</button>
+    <button id="playBtn">Play</button>
+    <div id="inviteLink" class="invite-link hidden"></div>
   </div>
   <div id="game" class="hidden">
     <div class="sidebar">
       <h2>Players</h2>
       <ul id="playersList"></ul>
       <div id="controls">
-        <button id="readyBtn">Ready</button>
+        <button id="readyBtn" disabled>Ready</button>
         <button id="startBtn" class="hidden">Start Game</button>
-        <button id="rollBtn" class="hidden">Roll Dice</button>
-        <div id="diceDisplay"></div>
       </div>
-      <div id="inviteLink" class="invite-link hidden"></div>
+      <div id="inviteLinkGame" class="invite-link hidden"></div>
     </div>
     <div class="board-container">
       <div id="board"></div>
+      <div id="dice" class="hidden">🎲</div>
     </div>
   </div>
-  <script src="game.js"></script>
+  <script>
+    (() => {
+      // Constants for board layout
+      const CELL_SIZE = 30;
+      const COLOR_START = { red: 0, green: 13, yellow: 26, blue: 39 };
+      const SAFE_INDICES = [0, 8, 13, 21, 26, 34, 39, 47];
+      const boardMapping = [
+        [1, 6], [2, 6], [3, 6], [4, 6], [5, 6], [6, 6],
+        [6, 5], [6, 4], [6, 3], [6, 2], [6, 1], [6, 0],
+        [7, 0], [8, 0], [8, 1], [8, 2], [8, 3], [8, 4],
+        [8, 5], [8, 6], [9, 6], [10, 6], [11, 6], [12, 6],
+        [13, 6], [14, 6], [14, 7], [14, 8], [13, 8], [12, 8],
+        [11, 8], [10, 8], [9, 8], [8, 8], [8, 9], [8, 10],
+        [8, 11], [8, 12], [8, 13], [8, 14], [7, 14], [6, 14],
+        [6, 13], [6, 12], [6, 11], [6, 10], [6, 9], [6, 8],
+        [5, 8], [4, 8], [3, 8], [2, 8]
+      ];
+      const finalMapping = {
+        red:    [[1,7],[2,7],[3,7],[4,7],[5,7],[6,7]],
+        green:  [[7,1],[7,2],[7,3],[7,4],[7,5],[7,6]],
+        yellow: [[13,7],[12,7],[11,7],[10,7],[9,7],[8,7]],
+        blue:   [[7,13],[7,12],[7,11],[7,10],[7,9],[7,8]],
+      };
+      const homePositions = {
+        red:    [[1,1],[1,3],[3,1],[3,3]],
+        green:  [[1,11],[1,13],[3,11],[3,13]],
+        yellow: [[11,1],[11,3],[13,1],[13,3]],
+        blue:   [[11,11],[11,13],[13,11],[13,13]],
+      };
+
+      // State
+      const state = {
+        ws: null,
+        myId: null,
+        players: {},
+        order: [],
+        gameStarted: false,
+        turnPlayerId: null,
+        currentRoll: 0,
+        movableTokens: [],
+        pingInterval: null
+      };
+
+      // DOM elements
+      const setupPanel = document.getElementById('setup');
+      const nameInput = document.getElementById('playerName');
+      const playBtn = document.getElementById('playBtn');
+      const inviteLink = document.getElementById('inviteLink');
+      const inviteLinkGame = document.getElementById('inviteLinkGame');
+      const gameArea = document.getElementById('game');
+      const playersList = document.getElementById('playersList');
+      const readyBtn = document.getElementById('readyBtn');
+      const startBtn = document.getElementById('startBtn');
+      const boardEl = document.getElementById('board');
+      const diceEl = document.getElementById('dice');
+
+      // Generate a random room ID or use one from URL
+      const roomId = new URLSearchParams(location.search).get('room') || Math.random().toString(36).substr(2, 6);
+
+      // Utility to compute server websocket URL
+      function getServerUrl() {
+        const protocol = location.protocol === 'https:' ? 'wss' : 'ws';
+        return `${protocol}://${location.host}/ws`;
+      }
+
+      // Storage for token DOM elements
+      const tokenElements = {};
+
+      // Draw the board grid
+      function drawBoard() {
+        boardEl.innerHTML = '';
+        const cells = [];
+        for (let r = 0; r < 15; r++) {
+          for (let c = 0; c < 15; c++) {
+            const cell = document.createElement('div');
+            cell.classList.add('cell');
+            cell.dataset.row = r;
+            cell.dataset.col = c;
+            boardEl.appendChild(cell);
+            cells.push(cell);
+          }
+        }
+        boardMapping.forEach(([r,c]) => {
+          const idx = r * 15 + c;
+          cells[idx].classList.add('main-track');
+        });
+        SAFE_INDICES.forEach((gi) => {
+          const [r,c] = boardMapping[gi];
+          const idx = r * 15 + c;
+          cells[idx].classList.add('safe');
+        });
+        Object.keys(finalMapping).forEach(color => {
+          finalMapping[color].forEach(([r,c]) => {
+            const idx = r * 15 + c;
+            cells[idx].classList.add(`final-${color}`);
+          });
+        });
+        Object.keys(homePositions).forEach(color => {
+          homePositions[color].forEach(([r,c]) => {
+            const idx = r * 15 + c;
+            cells[idx].classList.add(`home-${color}`);
+          });
+        });
+      }
+
+      // Update players list UI
+      function updatePlayersList() {
+        playersList.innerHTML = '';
+        state.order.forEach((pid) => {
+          const p = state.players[pid];
+          if (!p) return;
+          const li = document.createElement('li');
+          const indicator = document.createElement('span');
+          indicator.classList.add('color-indicator');
+          indicator.style.background = tokenColor(p.color);
+          li.appendChild(indicator);
+          const nameSpan = document.createElement('span');
+          nameSpan.textContent = p.name || 'Unknown';
+          if (p.id === state.turnPlayerId && state.gameStarted) {
+            nameSpan.style.fontWeight = 'bold';
+          }
+          li.appendChild(nameSpan);
+          if (p.ready && !state.gameStarted) {
+            const r = document.createElement('span');
+            r.textContent = ' ✅';
+            li.appendChild(r);
+          }
+          playersList.appendChild(li);
+        });
+      }
+
+      function tokenColor(color) {
+        switch(color) {
+          case 'red': return '#e53935';
+          case 'green': return '#43a047';
+          case 'yellow': return '#fbc02d';
+          case 'blue': return '#1e88e5';
+          default: return '#ccc';
+        }
+      }
+
+      function ensureTokens() {
+        Object.values(state.players).forEach((player) => {
+          if (!tokenElements[player.id]) {
+            tokenElements[player.id] = [];
+            for (let i = 0; i < 4; i++) {
+              const token = document.createElement('div');
+              token.classList.add('token', player.color);
+              token.dataset.playerId = player.id;
+              token.dataset.tokenIndex = i;
+              token.addEventListener('click', onTokenClick);
+              token.style.zIndex = 10;
+              boardEl.appendChild(token);
+              tokenElements[player.id].push(token);
+            }
+          }
+        });
+      }
+
+      function updateTokenPositions() {
+        Object.values(state.players).forEach((player) => {
+          const tokens = tokenElements[player.id] || [];
+          for (let i = 0; i < tokens.length; i++) {
+            const token = tokens[i];
+            const positions = player.positions || [];
+            const pos = positions[i];
+            let row, col;
+            if (pos === -1 || pos === undefined) {
+              [row, col] = homePositions[player.color][i];
+            } else if (pos <= 51) {
+              const globalIndex = (COLOR_START[player.color] + pos) % 52;
+              [row, col] = boardMapping[globalIndex];
+            } else {
+              const offset = pos - 52;
+              [row, col] = finalMapping[player.color][offset];
+            }
+            const top = row * CELL_SIZE + 5;
+            const left = col * CELL_SIZE + 5;
+            token.style.top = `${top}px`;
+            token.style.left = `${left}px`;
+            token.classList.remove('movable');
+            // Offset tokens if multiple share same cell
+            const tokensAtSame = tokens.filter((t, idx) => {
+              const posAt = positions[idx];
+              let r2,c2;
+              if (posAt === -1 || posAt === undefined) {
+                [r2,c2] = homePositions[player.color][idx];
+              } else if (posAt <= 51) {
+                const gi2 = (COLOR_START[player.color] + posAt) % 52;
+                [r2,c2] = boardMapping[gi2];
+              } else {
+                const off2 = posAt - 52;
+                [r2,c2] = finalMapping[player.color][off2];
+              }
+              return r2 === row && c2 === col;
+            });
+            const indexInStack = tokensAtSame.indexOf(token);
+            if (tokensAtSame.length > 1) {
+              const spacing = 4;
+              const rowOffset = Math.floor(indexInStack / 2);
+              const colOffset = indexInStack % 2;
+              token.style.top = `${top + rowOffset * spacing}px`;
+              token.style.left = `${left + colOffset * spacing}px`;
+            }
+          }
+        });
+      }
+
+      function onTokenClick(e) {
+        if (!state.gameStarted) return;
+        const token = e.currentTarget;
+        const tokenIndex = parseInt(token.dataset.tokenIndex);
+        const playerId = token.dataset.playerId;
+        if (playerId !== state.myId) return;
+        if (!state.movableTokens.includes(tokenIndex)) return;
+        state.ws.send(JSON.stringify({ type: 'move', tokenIndex }));
+        state.movableTokens = [];
+        hideDice();
+      }
+
+      function showStart() { startBtn.classList.remove('hidden'); }
+      function hideStart() { startBtn.classList.add('hidden'); }
+      function showDice() { diceEl.classList.remove('hidden'); }
+      function hideDice() { diceEl.classList.add('hidden'); }
+      function setDiceValue(val) { diceEl.textContent = val; }
+
+      function handleMessage(evt) {
+        let data;
+        try {
+          data = JSON.parse(evt.data);
+        } catch (err) {
+          console.error('Invalid JSON:', evt.data);
+          return;
+        }
+        switch(data.type) {
+          case 'joined': {
+            state.myId = data.playerId;
+            state.players = {};
+            state.order = [];
+            data.players.forEach(p => {
+              state.players[p.id] = { id: p.id, name: p.name, color: p.color, ready: p.ready, positions: [-1,-1,-1,-1] };
+              state.order.push(p.id);
+            });
+            ensureTokens();
+            updateTokenPositions();
+            updatePlayersList();
+            break;
+          }
+          case 'player_list': {
+            data.players.forEach(p => {
+              if (!state.players[p.id]) {
+                state.players[p.id] = { id:p.id, name:p.name, color:p.color, ready:p.ready, positions: [-1,-1,-1,-1] };
+                state.order.push(p.id);
+              } else {
+                state.players[p.id].name = p.name;
+                state.players[p.id].color = p.color;
+                state.players[p.id].ready = p.ready;
+              }
+            });
+            ensureTokens();
+            updatePlayersList();
+            break;
+          }
+          case 'game_started': {
+            state.gameStarted = true;
+            readyBtn.classList.add('hidden');
+            hideStart();
+            hideDice();
+            data.state.forEach(p => {
+              if (state.players[p.id]) {
+                state.players[p.id].positions = p.positions.slice();
+              }
+            });
+            state.turnPlayerId = data.turnPlayerId;
+            updatePlayersList();
+            updateTokenPositions();
+            if (state.turnPlayerId === state.myId) {
+              showDice();
+              setDiceValue('🎲');
+            } else {
+              hideDice();
+            }
+            break;
+          }
+          case 'roll_result': {
+            state.currentRoll = data.roll;
+            state.movableTokens = [];
+            setDiceValue(`\u{1F3B2} ${data.roll}`);
+            if (data.playerId === state.myId) {
+              state.movableTokens = data.moves;
+              const tokens = tokenElements[state.myId];
+              tokens.forEach((tk, idx) => {
+                if (state.movableTokens.includes(idx)) {
+                  tk.classList.add('movable');
+                } else {
+                  tk.classList.remove('movable');
+                }
+              });
+              hideDice();
+            }
+            break;
+          }
+          case 'state_update': {
+            const { playerId, positions } = data;
+            if (state.players[playerId]) {
+              state.players[playerId].positions = positions.slice();
+            }
+            updateTokenPositions();
+            break;
+          }
+          case 'turn': {
+            state.turnPlayerId = data.playerId;
+            updatePlayersList();
+            Object.values(tokenElements).forEach(arr => arr.forEach(el => el.classList.remove('movable')));
+            if (state.turnPlayerId === state.myId && state.gameStarted) {
+              showDice();
+              setDiceValue('🎲');
+            } else {
+              hideDice();
+            }
+            break;
+          }
+          case 'player_finished': {
+            break;
+          }
+          case 'error': {
+            alert(data.message);
+            break;
+          }
+        }
+      }
+
+      playBtn.addEventListener('click', () => {
+        const name = nameInput.value.trim() || `Player${Math.floor(Math.random()*1000)}`;
+        const ws = new WebSocket(getServerUrl());
+        state.ws = ws;
+        let pingInterval;
+        ws.onopen = () => {
+          ws.send(JSON.stringify({ type: 'join', roomId: roomId, name: name }));
+          setupPanel.classList.add('hidden');
+          gameArea.classList.remove('hidden');
+          drawBoard();
+          const invite = `${location.origin}?room=${roomId}`;
+          inviteLink.textContent = `Invite link: ${invite}`;
+          inviteLink.classList.remove('hidden');
+          inviteLink.onclick = () => {
+            navigator.clipboard.writeText(invite);
+            alert('Invite link copied to clipboard');
+          };
+          inviteLinkGame.textContent = `Invite link: ${invite}`;
+          inviteLinkGame.classList.remove('hidden');
+          inviteLinkGame.onclick = inviteLink.onclick;
+          pingInterval = setInterval(() => {
+            if (ws.readyState === WebSocket.OPEN) {
+              ws.send(JSON.stringify({ type: 'ping' }));
+            }
+          }, 20000);
+          state.pingInterval = pingInterval;
+        };
+        ws.onmessage = handleMessage;
+        ws.onclose = () => {
+          clearInterval(pingInterval);
+          alert('Disconnected from server');
+          location.reload();
+        };
+        ws.onerror = (err) => {
+          console.error('WebSocket error', err);
+        };
+      });
+
+      readyBtn.addEventListener('click', () => {
+        if (state.ws) {
+          state.ws.send(JSON.stringify({ type: 'ready' }));
+          readyBtn.disabled = true;
+        }
+      });
+
+      startBtn.addEventListener('click', () => {
+        if (state.ws) {
+          state.ws.send(JSON.stringify({ type: 'start' }));
+        }
+      });
+
+      diceEl.addEventListener('click', () => {
+        if (!state.ws || !state.gameStarted || state.turnPlayerId !== state.myId) return;
+        diceEl.classList.add('roll');
+        state.ws.send(JSON.stringify({ type:'roll' }));
+        setTimeout(() => {
+          diceEl.classList.remove('roll');
+        }, 800);
+      });
+
+      const observer = new MutationObserver(() => {
+        if (!state.gameStarted) {
+          const allReady = state.order.length >= 2 && state.order.every(pid => state.players[pid] && state.players[pid].ready);
+          const isHost = state.order[0] === state.myId;
+          if (isHost && allReady) showStart();
+          else hideStart();
+        }
+      });
+      observer.observe(playersList, { childList: true, subtree: true });
+
+    })();
+  </script>
 </body>
 </html>
