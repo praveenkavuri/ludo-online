@@ -198,11 +198,24 @@ app.ws('/ws', (ws, req) => {
         );
         return;
       }
-      // Check for duplicate color
+      // Determine the color to assign. Always respect diagonal pairing for the second player.
+      // Track colors already taken
       const takenColors = room.players.map((p) => p.color);
       let chosenColor = color;
-      if (!color || takenColors.includes(color)) {
-        // Assign first available color
+      // Mapping of diagonal opposite colours on a classic Ludo board. If a second player joins,
+      // they should be assigned the opposite colour to the first player. Red ↔ Yellow, Green ↔ Blue.
+      const diagOpposite = { red: 'yellow', yellow: 'red', green: 'blue', blue: 'green' };
+      if (room.players.length === 1) {
+        // Second player: force the opposite colour of the first player's colour
+        const firstColour = room.players[0].color;
+        const opposite = diagOpposite[firstColour];
+        // Only assign if not already taken (shouldn't be), otherwise fallback to first available
+        if (!takenColors.includes(opposite)) {
+          chosenColor = opposite;
+        }
+      }
+      // For subsequent players or if no colour specified, choose the first available colour
+      if (!chosenColor || takenColors.includes(chosenColor)) {
         const available = ['red', 'green', 'yellow', 'blue'].find((c) => !takenColors.includes(c));
         chosenColor = available;
       }
@@ -227,6 +240,10 @@ app.ws('/ws', (ws, req) => {
         type: 'player_list',
         players: room.players.map((p) => ({ id: p.id, name: p.name, color: p.color, ready: p.ready })),
       });
+    }
+    else if (data.type === 'ping') {
+      // Heartbeat ping from client; respond with pong implicitly via ws protocol
+      return;
     }
     else if (data.type === 'ready' && currentRoom && currentPlayer) {
       currentPlayer.ready = true;
@@ -342,23 +359,23 @@ app.ws('/ws', (ws, req) => {
   });
 
   ws.on('close', () => {
-  // Remove player from room
-  if (currentRoom && currentPlayer) {
-    currentRoom.players = currentRoom.players.filter((p) => p.id !== currentPlayer.id);
-    // Adjust turn index if needed
-    if (currentRoom.turnIndex >= currentRoom.players.length) {
-      currentRoom.turnIndex = 0;
+    // Remove player from room
+    if (currentRoom && currentPlayer) {
+      currentRoom.players = currentRoom.players.filter((p) => p.id !== currentPlayer.id);
+      // Adjust turn index if needed
+      if (currentRoom.turnIndex >= currentRoom.players.length) {
+        currentRoom.turnIndex = 0;
+      }
+      // Inform other players
+      broadcast(currentRoom, {
+        type: 'player_list',
+        players: currentRoom.players.map((p) => ({ id: p.id, name: p.name, color: p.color, ready: p.ready }))
+      });
+      // If no players left, remove room
+      if (currentRoom.players.length === 0) {
+        rooms.delete(currentRoom.id);
+      }
     }
-    // Inform other players
-    broadcast(currentRoom, {
-      type: 'player_list',
-      players: currentRoom.players.map((p) => ({ id: p.id, name: p.name, color: p.color, ready: p.ready }))
-    });
-    // If no players left, remove room
-    if (currentRoom.players.length === 0) {
-      rooms.delete(currentRoom.id);
-    }
-  }
   });
 });
 
